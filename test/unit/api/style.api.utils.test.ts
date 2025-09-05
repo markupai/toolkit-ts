@@ -7,7 +7,7 @@ import { isCompletedResponse } from '../../../src/api/style/style.api.utils';
 import { Status } from '../../../src/utils/api.types';
 import { styleBatchCheck } from '../../../src/api/style/style.api.utils';
 import { Config, PlatformType, Environment } from '../../../src/utils/api.types';
-import { StyleAnalysisReq, StyleAnalysisSuccessResp } from '../../../src/api/style/style.api.types';
+import { IssueCategory, StyleAnalysisReq, StyleAnalysisSuccessResp } from '../../../src/api/style/style.api.types';
 
 // Mock Node.js modules
 vi.mock('fs');
@@ -20,52 +20,165 @@ const mockFileURLToPath = vi.mocked(fileURLToPath);
 
 // Mock response types
 const completedSuccessResp = {
-  workflow_id: 'abc',
-  status: Status.Completed,
-  style_guide_id: 'sg1',
-  scores: {},
-  issues: [],
-  check_options: {
-    style_guide: { style_guide_type: 'custom', style_guide_id: 'sg1' },
+  workflow: {
+    id: 'abc',
+    type: 'checks',
+    api_version: '1.0.0',
+    generated_at: '2025-01-01T00:00:00Z',
+    status: Status.Completed,
+  },
+  config: {
     dialect: 'american_english',
+    style_guide: { style_guide_type: 'custom', style_guide_id: 'sg1' },
     tone: 'formal',
+  },
+  original: {
+    issues: [],
+    scores: {
+      quality: {
+        score: 0,
+        grammar: { score: 0, issues: 0 },
+        alignment: { score: 0, issues: 0 },
+        terminology: { score: 0, issues: 0 },
+      },
+      analysis: {
+        clarity: {
+          score: 0,
+          word_count: 0,
+          sentence_count: 0,
+          average_sentence_length: 0,
+          flesch_reading_ease: 0,
+          vocabulary_complexity: 0,
+          sentence_complexity: 0,
+        },
+        tone: { score: 0, informality: 0, liveliness: 0, informality_alignment: 0, liveliness_alignment: 0 },
+      },
+    },
   },
 };
 
 const runningSuccessResp = {
-  workflow_id: 'abc',
-  status: Status.Running,
-  style_guide_id: 'sg1',
-  scores: {},
-  issues: [],
-  check_options: {
-    style_guide: { style_guide_type: 'custom', style_guide_id: 'sg1' },
+  workflow: {
+    id: 'abc',
+    type: 'checks',
+    api_version: '1.0.0',
+    generated_at: '2025-01-01T00:00:00Z',
+    status: Status.Running,
+  },
+  config: {
     dialect: 'american_english',
+    style_guide: { style_guide_type: 'custom', style_guide_id: 'sg1' },
     tone: 'formal',
+  },
+  original: {
+    issues: [],
+    scores: {
+      quality: {
+        score: 0,
+        grammar: { score: 0, issues: 0 },
+        alignment: { score: 0, issues: 0 },
+        terminology: { score: 0, issues: 0 },
+      },
+      analysis: {
+        clarity: {
+          score: 0,
+          word_count: 0,
+          sentence_count: 0,
+          average_sentence_length: 0,
+          flesch_reading_ease: 0,
+          vocabulary_complexity: 0,
+          sentence_complexity: 0,
+        },
+        tone: { score: 0, informality: 0, liveliness: 0, informality_alignment: 0, liveliness_alignment: 0 },
+      },
+    },
   },
 };
 
 const completedSuggestionResp = {
-  workflow_id: 'def',
-  status: Status.Completed,
-  style_guide_id: 'sg2',
-  scores: {},
-  issues: [{ original: 'foo', char_index: 0, subcategory: 'bar', category: 'baz', suggestion: 'baz' }],
-  check_options: {
-    style_guide: { style_guide_type: 'custom', style_guide_id: 'sg2' },
+  workflow: {
+    id: 'def',
+    type: 'suggestions',
+    api_version: '1.0.0',
+    generated_at: '2025-01-01T00:00:00Z',
+    status: Status.Completed,
+  },
+  config: {
     dialect: 'british_english',
+    style_guide: { style_guide_type: 'custom', style_guide_id: 'sg2' },
     tone: 'casual',
+  },
+  original: {
+    issues: [{ original: 'foo', position: { start_index: 0 }, subcategory: 'bar', category: 'baz', suggestion: 'baz' }],
+    scores: {
+      quality: {
+        score: 0,
+        grammar: { score: 0, issues: 0 },
+        alignment: { score: 0, issues: 0 },
+        terminology: { score: 0, issues: 0 },
+      },
+      analysis: {
+        clarity: {
+          score: 0,
+          word_count: 0,
+          sentence_count: 0,
+          average_sentence_length: 0,
+          flesch_reading_ease: 0,
+          vocabulary_complexity: 0,
+          sentence_complexity: 0,
+        },
+        tone: { score: 0, informality: 0, liveliness: 0, informality_alignment: 0, liveliness_alignment: 0 },
+      },
+    },
   },
 };
 
 const pollResp = {
-  workflow_id: 'ghi',
-  status: Status.Running,
+  workflow: {
+    id: 'ghi',
+    type: 'checks',
+    api_version: '1.0.0',
+    generated_at: '2025-01-01T00:00:00Z',
+    status: Status.Running,
+  },
+  config: {
+    dialect: 'american_english',
+    style_guide: { style_guide_type: 'custom', style_guide_id: 'sg1' },
+    tone: 'formal',
+  },
+  original: {
+    issues: [],
+    scores: {
+      quality: {
+        score: 0,
+        grammar: { score: 0, issues: 0 },
+        alignment: { score: 0, issues: 0 },
+        terminology: { score: 0, issues: 0 },
+      },
+      analysis: {
+        clarity: {
+          score: 0,
+          word_count: 0,
+          sentence_count: 0,
+          average_sentence_length: 0,
+          flesch_reading_ease: 0,
+          vocabulary_complexity: 0,
+          sentence_complexity: 0,
+        },
+        tone: { score: 0, informality: 0, liveliness: 0, informality_alignment: 0, liveliness_alignment: 0 },
+      },
+    },
+  },
 };
 
 const failedResp = {
-  workflow_id: 'jkl',
-  status: Status.Failed,
+  workflow: {
+    id: 'jkl',
+    type: 'checks',
+    api_version: '1.0.0',
+    generated_at: '2025-01-01T00:00:00Z',
+    status: Status.Failed,
+  },
 };
 
 describe('Style API Utils', () => {
@@ -251,11 +364,11 @@ describe('isCompletedResponse', () => {
   it('narrows type for completed response', () => {
     const resp = completedSuccessResp as typeof completedSuccessResp | typeof pollResp;
     if (isCompletedResponse(resp)) {
-      // TypeScript should know resp.status === Status.Completed
-      expect(resp.status).toBe(Status.Completed);
-      expect('scores' in resp).toBe(true);
+      // TypeScript should know resp.workflow.status === Status.Completed
+      expect(resp.workflow.status).toBe(Status.Completed);
+      expect('original' in resp).toBe(true);
     } else {
-      expect(resp.status).not.toBe(Status.Completed);
+      expect(resp.workflow.status).not.toBe(Status.Completed);
     }
   });
 });
@@ -288,40 +401,103 @@ describe('Batch Processing', () => {
   ];
 
   const mockStyleCheckResponse: StyleAnalysisSuccessResp = {
-    workflow_id: 'test-workflow-id',
-    status: Status.Completed,
-    style_guide_id: 'test-style-guide-id',
-    scores: {
-      quality: {
-        score: 85,
-        grammar: { score: 90, issues: 2 },
-        style_guide: { score: 85, issues: 1 },
-        terminology: { score: 92, issues: 0 },
-      },
-      analysis: {
-        clarity: {
-          score: 80,
-          word_count: 100,
-          sentence_count: 5,
-          average_sentence_length: 20,
-          flesch_reading_ease: 70,
-          vocabulary_complexity: 0.6,
-          sentence_complexity: 0.5,
-        },
-        tone: {
-          score: 88,
-          informality: 0.2,
-          liveliness: 0.3,
-          informality_alignment: 0.25,
-          liveliness_alignment: 0.35,
-        },
+    workflow: {
+      id: 'chk-2b5f8d3a-9c7e-4f2b-a8d1-6e9c3f7b4a2d',
+      type: 'checks',
+      api_version: '1.0.0',
+      generated_at: '2025-01-15T14:22:33Z',
+      status: Status.Completed,
+      webhook_response: {
+        url: 'https://api.example.com/webhook',
+        status_code: 200,
       },
     },
-    issues: [],
-    check_options: {
-      style_guide: { style_guide_type: 'ap', style_guide_id: 'ap' },
-      dialect: 'american_english',
-      tone: 'formal',
+    config: {
+      dialect: 'canadian_english',
+      style_guide: {
+        style_guide_type: 'ap',
+        style_guide_id: 'sg-8d4e5f6a-2b3c-4d5e-6f7a-8b9c0d1e2f3a',
+      },
+      tone: 'conversational',
+    },
+    original: {
+      issues: [
+        {
+          original: 'therefor',
+          position: {
+            start_index: 89,
+          },
+          subcategory: 'spelling',
+          category: IssueCategory.Grammar,
+        },
+        {
+          original: 'leverage',
+          position: {
+            start_index: 156,
+          },
+          subcategory: 'vocabulary',
+          category: IssueCategory.SimpleVocab,
+        },
+        {
+          original: 'going forward',
+          position: {
+            start_index: 234,
+          },
+          subcategory: 'word_choice',
+          category: IssueCategory.Tone,
+        },
+        {
+          original: 'email',
+          position: {
+            start_index: 312,
+          },
+          subcategory: 'punctuation',
+          category: IssueCategory.StyleGuide,
+        },
+        {
+          original: 'towards',
+          position: {
+            start_index: 405,
+          },
+          subcategory: 'word_choice',
+          category: IssueCategory.Terminology,
+        },
+      ],
+      scores: {
+        quality: {
+          score: 72,
+          grammar: {
+            score: 95,
+            issues: 1,
+          },
+          alignment: {
+            score: 80,
+            issues: 2,
+          },
+          terminology: {
+            score: 100,
+            issues: 0,
+          },
+        },
+        analysis: {
+          clarity: {
+            score: 64,
+            flesch_reading_ease: 51.4,
+            sentence_complexity: 38.9,
+            vocabulary_complexity: 45.6,
+            sentence_count: 6,
+            word_count: 112,
+            average_sentence_length: 18.7,
+          },
+          tone: {
+            score: 78,
+            informality: 38.2,
+            liveliness: 33.9,
+            informality_alignment: 115.8,
+            liveliness_alignment: 106.4,
+          },
+        },
+      },
     },
   };
 

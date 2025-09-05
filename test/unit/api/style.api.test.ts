@@ -16,7 +16,7 @@ import {
 } from '../../../src/api/style/style.api';
 import { STYLE_DEFAULTS } from '../../../src/api/style/style.api.defaults';
 import { Status } from '../../../src/utils/api.types';
-import type { Config, ResponseBase } from '../../../src/utils/api.types';
+import type { Config } from '../../../src/utils/api.types';
 import { PlatformType, Environment } from '../../../src/utils/api.types';
 import { server } from '../setup';
 import { apiHandlers } from '../mocks/api.handlers';
@@ -26,30 +26,6 @@ import {
   StyleAnalysisSuggestionResp,
   StyleAnalysisRewriteResp,
 } from '../../../src/api/style/style.api.types';
-
-// Custom type guards for better type narrowing
-function isStyleAnalysisSuccessResp(
-  response: StyleAnalysisSuccessResp | ResponseBase,
-): response is StyleAnalysisSuccessResp {
-  return response.status === Status.Completed && 'style_guide_id' in response && 'scores' in response;
-}
-
-function isStyleAnalysisSuggestionResp(
-  response: StyleAnalysisSuggestionResp | ResponseBase,
-): response is StyleAnalysisSuggestionResp {
-  return response.status === Status.Completed && 'style_guide_id' in response && 'scores' in response;
-}
-
-function isStyleAnalysisRewriteResp(
-  response: StyleAnalysisRewriteResp | ResponseBase,
-): response is StyleAnalysisRewriteResp {
-  return (
-    response.status === Status.Completed &&
-    'style_guide_id' in response &&
-    'scores' in response &&
-    'rewrite' in response
-  );
-}
 
 // Set up MSW server lifecycle hooks
 beforeAll(() => server.listen());
@@ -61,7 +37,6 @@ describe('Style API Unit Tests', () => {
     apiKey: 'test-api-key',
     platform: { type: PlatformType.Environment, value: Environment.Dev },
   };
-  const mockStyleGuideId = 'test-style-guide-id';
   const mockWorkflowId = 'test-workflow-id';
   const mockStyleAnalysisRequest = {
     content: 'test content',
@@ -185,48 +160,48 @@ describe('Style API Unit Tests', () => {
       server.use(apiHandlers.style.checks.success, apiHandlers.style.checks.poll);
 
       const result = await styleCheck(mockStyleAnalysisRequest, mockConfig);
-      expect(result.status).toBe(Status.Completed);
-      expect(result.workflow_id).toBe(mockWorkflowId);
-      expect(result.style_guide_id).toBe(mockStyleGuideId);
-      expect(result.scores).toBeDefined();
-      expect(result.issues).toBeDefined();
+      expect(result.workflow.status).toBe(Status.Completed);
+      expect(result.workflow.id).toBeDefined();
+      expect(result.config.style_guide.style_guide_id).toBeDefined();
+      expect(result.original.scores).toBeDefined();
+      expect(result.original.issues).toBeDefined();
     });
 
     it('should perform style suggestions with polling successfully', async () => {
       server.use(apiHandlers.style.suggestions.success, apiHandlers.style.suggestions.poll);
 
       const result = await styleSuggestions(mockStyleAnalysisRequest, mockConfig);
-      expect(result.status).toBe(Status.Completed);
-      expect(result.workflow_id).toBe(mockWorkflowId);
-      expect(result.style_guide_id).toBe(mockStyleGuideId);
-      expect(result.scores).toBeDefined();
-      expect(result.issues).toBeDefined();
+      expect(result.workflow.status).toBe(Status.Completed);
+      expect(result.workflow.id).toBeDefined();
+      expect(result.config.style_guide.style_guide_id).toBeDefined();
+      expect(result.original.scores).toBeDefined();
+      expect(result.original.issues).toBeDefined();
     });
 
     it('should perform style rewrite with polling successfully', async () => {
       server.use(apiHandlers.style.rewrites.success, apiHandlers.style.rewrites.poll);
 
       const result = await styleRewrite(mockStyleAnalysisRequest, mockConfig);
-      expect(result.status).toBe(Status.Completed);
-      expect(result.workflow_id).toBe(mockWorkflowId);
-      expect(result.style_guide_id).toBe(mockStyleGuideId);
-      expect(result.scores).toBeDefined();
-      expect(result.issues).toBeDefined();
-      expect(result.rewrite).toBeDefined();
+      expect(result.workflow.status).toBe(Status.Completed);
+      expect(result.workflow.id).toBeDefined();
+      expect(result.config.style_guide.style_guide_id).toBeDefined();
+      expect(result.original.scores).toBeDefined();
+      expect(result.original.issues).toBeDefined();
+      expect(result.rewrite.text).toBeDefined();
     });
 
     it('should include terminology scores in rewrite results', async () => {
       server.use(apiHandlers.style.rewrites.success, apiHandlers.style.rewrites.poll);
 
       const result = await styleRewrite(mockStyleAnalysisRequest, mockConfig);
-      expect(result.scores.quality.terminology).toBeDefined();
-      expect(typeof result.scores.quality.terminology.score).toBe('number');
-      expect(typeof result.scores.quality.terminology.issues).toBe('number');
-      expect(result.rewrite_scores.quality.terminology).toBeDefined();
-      expect(typeof result.rewrite_scores.quality.terminology.score).toBe('number');
-      expect(typeof result.rewrite_scores.quality.terminology.issues).toBe('number');
-      expect(result.rewrite_scores.quality.terminology.score).toBe(90);
-      expect(result.rewrite_scores.quality.terminology.issues).toBe(0);
+      expect(result.original.scores.quality.terminology).toBeDefined();
+      expect(typeof result.original.scores.quality.terminology.score).toBe('number');
+      expect(typeof result.original.scores.quality.terminology.issues).toBe('number');
+      expect(result.rewrite.scores.quality.terminology).toBeDefined();
+      expect(typeof result.rewrite.scores.quality.terminology.score).toBe('number');
+      expect(typeof result.rewrite.scores.quality.terminology.issues).toBe('number');
+      expect(result.rewrite.scores.quality.terminology.score).toBe(90);
+      expect(result.rewrite.scores.quality.terminology.issues).toBe(0);
     });
 
     it('should perform style check with polling and custom document name', async () => {
@@ -238,11 +213,11 @@ describe('Style API Unit Tests', () => {
       };
 
       const result = await styleCheck(requestWithDocumentName, mockConfig);
-      expect(result.status).toBe(Status.Completed);
-      expect(result.workflow_id).toBe(mockWorkflowId);
-      expect(result.style_guide_id).toBe(mockStyleGuideId);
-      expect(result.scores).toBeDefined();
-      expect(result.issues).toBeDefined();
+      expect(result.workflow.status).toBe(Status.Completed);
+      expect(result.workflow.id).toBeDefined();
+      expect(result.config.style_guide.style_guide_id).toBeDefined();
+      expect(result.original.scores).toBeDefined();
+      expect(result.original.issues).toBeDefined();
     });
 
     it('should perform style suggestions with polling and custom document name', async () => {
@@ -254,11 +229,11 @@ describe('Style API Unit Tests', () => {
       };
 
       const result = await styleSuggestions(requestWithDocumentName, mockConfig);
-      expect(result.status).toBe(Status.Completed);
-      expect(result.workflow_id).toBe(mockWorkflowId);
-      expect(result.style_guide_id).toBe(mockStyleGuideId);
-      expect(result.scores).toBeDefined();
-      expect(result.issues).toBeDefined();
+      expect(result.workflow.status).toBe(Status.Completed);
+      expect(result.workflow.id).toBeDefined();
+      expect(result.config.style_guide.style_guide_id).toBeDefined();
+      expect(result.original.scores).toBeDefined();
+      expect(result.original.issues).toBeDefined();
     });
 
     it('should perform style rewrite with polling and custom document name', async () => {
@@ -270,12 +245,12 @@ describe('Style API Unit Tests', () => {
       };
 
       const result = await styleRewrite(requestWithDocumentName, mockConfig);
-      expect(result.status).toBe(Status.Completed);
-      expect(result.workflow_id).toBe(mockWorkflowId);
-      expect(result.style_guide_id).toBe(mockStyleGuideId);
-      expect(result.scores).toBeDefined();
-      expect(result.issues).toBeDefined();
-      expect(result.rewrite).toBeDefined();
+      expect(result.workflow.status).toBe(Status.Completed);
+      expect(result.workflow.id).toBeDefined();
+      expect(result.config.style_guide.style_guide_id).toBeDefined();
+      expect(result.original.scores).toBeDefined();
+      expect(result.original.issues).toBeDefined();
+      expect(result.rewrite.text).toBeDefined();
     });
 
     it('should perform style check with polling using File content', async () => {
@@ -291,11 +266,11 @@ describe('Style API Unit Tests', () => {
       };
 
       const result = await styleCheck(requestWithFile, mockConfig);
-      expect(result.status).toBe(Status.Completed);
-      expect(result.workflow_id).toBe(mockWorkflowId);
-      expect(result.style_guide_id).toBe(mockStyleGuideId);
-      expect(result.scores).toBeDefined();
-      expect(result.issues).toBeDefined();
+      expect(result.workflow.status).toBe(Status.Completed);
+      expect(result.workflow.id).toBeDefined();
+      expect(result.config.style_guide.style_guide_id).toBeDefined();
+      expect(result.original.scores).toBeDefined();
+      expect(result.original.issues).toBeDefined();
     });
 
     it('should perform style check with polling using Buffer content', async () => {
@@ -311,11 +286,11 @@ describe('Style API Unit Tests', () => {
       };
 
       const result = await styleCheck(requestWithBuffer, mockConfig);
-      expect(result.status).toBe(Status.Completed);
-      expect(result.workflow_id).toBe(mockWorkflowId);
-      expect(result.style_guide_id).toBe(mockStyleGuideId);
-      expect(result.scores).toBeDefined();
-      expect(result.issues).toBeDefined();
+      expect(result.workflow.status).toBe(Status.Completed);
+      expect(result.workflow.id).toBeDefined();
+      expect(result.config.style_guide.style_guide_id).toBeDefined();
+      expect(result.original.scores).toBeDefined();
+      expect(result.original.issues).toBeDefined();
     });
   });
 
@@ -324,27 +299,24 @@ describe('Style API Unit Tests', () => {
       server.use(apiHandlers.style.checks.poll);
 
       const result = await getStyleCheck(mockWorkflowId, mockConfig);
-      expect(result.status).toBe(Status.Completed);
-      expect(result.workflow_id).toBe(mockWorkflowId);
-
-      const typedResult = isStyleAnalysisSuccessResp(result) ? result : null;
-      expect(typedResult).not.toBeNull();
-      expect(typedResult!.style_guide_id).toBe(mockStyleGuideId);
-      expect(typedResult!.scores).toBeDefined();
-      expect(typedResult!.issues).toBeDefined();
+      const typedResult = result as StyleAnalysisSuccessResp;
+      expect(typedResult.workflow.status).toBe(Status.Completed);
+      expect(typedResult.workflow.id).toBeDefined();
+      expect(typedResult.config.style_guide.style_guide_id).toBeDefined();
+      expect(typedResult.original.scores).toBeDefined();
+      expect(typedResult.original.issues).toBeDefined();
     });
 
     it('should include terminology scores in style check results', async () => {
       server.use(apiHandlers.style.checks.poll);
 
       const result = await getStyleCheck(mockWorkflowId, mockConfig);
-      const typedResult = isStyleAnalysisSuccessResp(result) ? result : null;
-      expect(typedResult).not.toBeNull();
-      expect(typedResult!.scores.quality.terminology).toBeDefined();
-      expect(typeof typedResult!.scores.quality.terminology.score).toBe('number');
-      expect(typeof typedResult!.scores.quality.terminology.issues).toBe('number');
-      expect(typedResult!.scores.quality.terminology.score).toBe(85);
-      expect(typedResult!.scores.quality.terminology.issues).toBe(0);
+      const typedResult = result as StyleAnalysisSuccessResp;
+      expect(typedResult.original.scores.quality.terminology).toBeDefined();
+      expect(typeof typedResult.original.scores.quality.terminology.score).toBe('number');
+      expect(typeof typedResult.original.scores.quality.terminology.issues).toBe('number');
+      expect(typedResult.original.scores.quality.terminology.score).toBe(85);
+      expect(typedResult.original.scores.quality.terminology.issues).toBe(0);
     });
   });
 
@@ -353,17 +325,15 @@ describe('Style API Unit Tests', () => {
       server.use(apiHandlers.style.suggestions.poll);
 
       const result = await getStyleSuggestion(mockWorkflowId, mockConfig);
-      expect(result.status).toBe(Status.Completed);
-      expect(result.workflow_id).toBe(mockWorkflowId);
-
-      const typedResult = isStyleAnalysisSuggestionResp(result) ? result : null;
-      expect(typedResult).not.toBeNull();
-      expect(typedResult!.style_guide_id).toBe(mockStyleGuideId);
-      expect(typedResult!.scores).toBeDefined();
-      expect(typedResult!.issues).toBeDefined();
+      const typedResult = result as StyleAnalysisSuggestionResp;
+      expect(typedResult.workflow.status).toBe(Status.Completed);
+      expect(typedResult.workflow.id).toBeDefined();
+      expect(typedResult.config.style_guide.style_guide_id).toBeDefined();
+      expect(typedResult.original.scores).toBeDefined();
+      expect(typedResult.original.issues).toBeDefined();
       // Check for suggestion in issues
-      if (typedResult!.issues && typedResult!.issues.length > 0) {
-        const issue = typedResult!.issues[0];
+      if (typedResult.original.issues && typedResult.original.issues.length > 0) {
+        const issue = typedResult.original.issues[0];
         expect(issue.suggestion).toBeDefined();
         expect(typeof issue.suggestion).toBe('string');
       }
@@ -373,26 +343,23 @@ describe('Style API Unit Tests', () => {
       server.use(apiHandlers.style.rewrites.poll);
 
       const result = await getStyleRewrite(mockWorkflowId, mockConfig);
-      expect(result.status).toBe(Status.Completed);
-
-      const typedResult = isStyleAnalysisRewriteResp(result) ? result : null;
-      expect(typedResult).not.toBeNull();
-      expect(typedResult!.style_guide_id).toBe(mockStyleGuideId);
-      expect(typedResult!.scores).toBeDefined();
-      expect(typedResult!.issues).toBeDefined();
-      expect(typedResult!.rewrite).toBeDefined();
-      expect(typeof typedResult!.rewrite).toBe('string');
-      expect(typedResult!.rewrite_scores).toBeDefined();
-      expect(typedResult!.rewrite_scores.quality).toBeDefined();
-      expect(typedResult!.rewrite_scores.analysis).toBeDefined();
-      expect(typedResult!.rewrite_scores.analysis.clarity).toBeDefined();
-      expect(typedResult!.rewrite_scores.quality.grammar).toBeDefined();
-      expect(typedResult!.rewrite_scores.quality.style_guide).toBeDefined();
-      expect(typedResult!.rewrite_scores.analysis.tone).toBeDefined();
-      expect(typedResult!.rewrite_scores.quality.terminology).toBeDefined();
+      const typedResult = result as StyleAnalysisRewriteResp;
+      expect(typedResult.workflow.status).toBe(Status.Completed);
+      expect(typedResult.config.style_guide.style_guide_id).toBeDefined();
+      expect(typedResult.original.scores).toBeDefined();
+      expect(typedResult.original.issues).toBeDefined();
+      expect(typedResult.rewrite.text).toBeDefined();
+      expect(typeof typedResult.rewrite.text).toBe('string');
+      expect(typedResult.rewrite.scores.quality).toBeDefined();
+      expect(typedResult.rewrite.scores.analysis).toBeDefined();
+      expect(typedResult.rewrite.scores.analysis.clarity).toBeDefined();
+      expect(typedResult.rewrite.scores.quality.grammar).toBeDefined();
+      expect(typedResult.rewrite.scores.quality.alignment).toBeDefined();
+      expect(typedResult.rewrite.scores.analysis.tone).toBeDefined();
+      expect(typedResult.rewrite.scores.quality.terminology).toBeDefined();
       // Check for suggestion in issues
-      if (typedResult!.issues && typedResult!.issues.length > 0) {
-        const issue = typedResult!.issues[0];
+      if (typedResult.original.issues && typedResult.original.issues.length > 0) {
+        const issue = typedResult.original.issues[0];
         expect(issue.suggestion).toBeDefined();
         expect(typeof issue.suggestion).toBe('string');
       }

@@ -1,14 +1,14 @@
 import { StyleOperationType, type CreateStyleGuideReq } from './style.api.types';
 import { initEndpoint } from '../../utils/api';
 import { Status } from '../../utils/api.types';
-import type { Config, Status as StatusType } from '../../utils/api.types';
+import type { Config } from '../../utils/api.types';
 import type {
+  StyleAnalysisResponseBase,
   StyleAnalysisRewriteResp,
   StyleAnalysisSubmitResp,
   StyleAnalysisSuccessResp,
   StyleAnalysisSuggestionResp,
 } from './style.api.types';
-import type { ResponseBase } from '../../utils/api.types';
 import type { StyleAnalysisReq, FileDescriptor, BufferDescriptor } from './style.api.types';
 import type { Dialects, Tones } from '@markupai/api/api';
 // Batch processing utilities
@@ -200,11 +200,9 @@ export async function createContentObject(request: StyleAnalysisReq): Promise<Fi
 }
 
 // Helper function to handle style analysis submission and polling
-export async function submitAndPollStyleAnalysis<T extends { status: StatusType }>(
-  operationType: StyleOperationType,
-  request: StyleAnalysisReq,
-  config: Config,
-): Promise<T> {
+export async function submitAndPollStyleAnalysis<
+  T extends StyleAnalysisSuccessResp | StyleAnalysisSuggestionResp | StyleAnalysisRewriteResp,
+>(operationType: StyleOperationType, request: StyleAnalysisReq, config: Config): Promise<T> {
   const client = initEndpoint(config);
   const contentObject = await createContentObject(request);
 
@@ -251,15 +249,17 @@ export async function submitAndPollStyleAnalysis<T extends { status: StatusType 
 
   const polledResponse = await pollWorkflowForResult<T>(initialResponse.workflow_id, config, operationType);
 
-  if (polledResponse.status === Status.Completed) {
+  if (polledResponse.workflow.status === Status.Completed) {
     return polledResponse;
   }
-  throw new Error(`${operationType} failed with status: ${polledResponse.status}`);
+  throw new Error(`${operationType} failed with status: ${polledResponse.workflow.status}`);
 }
 
 // Generic type guard for completed responses
-export function isCompletedResponse<T extends ResponseBase>(resp: T): resp is T & { status: Status.Completed } {
-  return resp.status === Status.Completed;
+export function isCompletedResponse<T extends StyleAnalysisResponseBase>(
+  resp: T,
+): resp is T & { workflow: { status: Status.Completed } } & StyleAnalysisResponseBase {
+  return resp.workflow.status === Status.Completed;
 }
 
 // Type dispatcher for style functions
@@ -544,44 +544,40 @@ export async function pollWorkflowForResult<T>(
 
     try {
       const client = initEndpoint(config);
-      let response: StyleAnalysisSuccessResp | StyleAnalysisSuggestionResp | StyleAnalysisRewriteResp;
+      let response: StyleAnalysisResponseBase;
 
+      // TODO: Remove the unknown as cast once the SDK API is updated
       switch (styleOperation) {
         case StyleOperationType.Check:
-          response = (await client.styleChecks.getStyleCheck(workflowId)) as StyleAnalysisSuccessResp;
+          response = (await client.styleChecks.getStyleCheck(workflowId)) as unknown as StyleAnalysisResponseBase;
           break;
         case StyleOperationType.Suggestions:
-          response = (await client.styleSuggestions.getStyleSuggestion(workflowId)) as StyleAnalysisSuggestionResp;
+          response = (await client.styleSuggestions.getStyleSuggestion(
+            workflowId,
+          )) as unknown as StyleAnalysisResponseBase;
           break;
         case StyleOperationType.Rewrite:
-          response = (await client.styleRewrites.getStyleRewrite(workflowId)) as StyleAnalysisRewriteResp;
+          response = (await client.styleRewrites.getStyleRewrite(workflowId)) as unknown as StyleAnalysisResponseBase;
           break;
       }
 
-      // Add workflow_id to the response for consistency
-      const dataWithWorkflowId = {
-        ...response,
-        workflow_id: workflowId,
-      };
+      const currentStatus = response.workflow.status;
 
-      // Normalize status to match enum values
-      const normalizedStatus = dataWithWorkflowId.status.toLowerCase() as Status;
-
-      if (normalizedStatus === Status.Failed) {
+      if (currentStatus === Status.Failed) {
         throw new ApiError(`Workflow failed with status: ${Status.Failed}`, ErrorType.WORKFLOW_FAILED);
       }
 
-      if (normalizedStatus === Status.Completed) {
-        return dataWithWorkflowId as T;
+      if (currentStatus === Status.Completed) {
+        return response as T;
       }
 
-      if (normalizedStatus === Status.Running || normalizedStatus === Status.Queued) {
+      if (currentStatus === Status.Running || currentStatus === Status.Queued) {
         attempts++;
         await new Promise((resolve) => setTimeout(resolve, pollInterval));
         return poll();
       }
 
-      throw new ApiError(`Unexpected workflow status: ${dataWithWorkflowId.status}`, ErrorType.UNEXPECTED_STATUS);
+      throw new ApiError(`Unexpected workflow status: ${currentStatus}`, ErrorType.UNEXPECTED_STATUS);
     } catch (error) {
       if (error instanceof MarkupAIError) {
         throw ApiError.fromResponse(error.statusCode || 0, error.body as Record<string, unknown>);

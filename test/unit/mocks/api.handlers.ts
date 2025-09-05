@@ -173,59 +173,56 @@ const styleHandlers = {
     }),
     poll: http.get('*/v1/style/checks/:workflowId', () => {
       return HttpResponse.json({
-        status: Status.Completed,
-        workflow_id: 'test-workflow-id',
-        style_guide_id: 'test-style-guide-id',
-        scores: {
-          quality: {
-            score: 80,
-            grammar: {
-              score: 90,
-              issues: 1,
-            },
-            style_guide: {
-              score: 85,
-              issues: 0,
-            },
-            terminology: {
-              score: 85,
-              issues: 0,
-            },
-          },
-          analysis: {
-            clarity: {
-              score: 75,
-              word_count: 75,
-              sentence_count: 5,
-              average_sentence_length: 15,
-              flesch_reading_ease: 80,
-              vocabulary_complexity: 85,
-              sentence_complexity: 97.4,
-            },
-            tone: {
-              score: 70,
-              informality: 30,
-              liveliness: 60,
-              informality_alignment: 25.0,
-              liveliness_alignment: 40.0,
-            },
-          },
+        workflow: {
+          id: 'test-workflow-id',
+          type: 'checks',
+          api_version: '1.0.0',
+          generated_at: '2025-01-15T14:22:33Z',
+          status: Status.Completed,
         },
-        issues: [
-          {
-            original: 'This is a test sentence.',
-            char_index: 0,
-            subcategory: 'passive_voice',
-            category: 'grammar',
-          },
-        ],
-        check_options: {
+        config: {
+          dialect: 'american_english',
           style_guide: {
             style_guide_type: 'ap',
             style_guide_id: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
           },
-          dialect: 'american_english',
           tone: 'academic',
+        },
+        original: {
+          issues: [
+            {
+              original: 'This is a test sentence.',
+              position: { start_index: 0 },
+              subcategory: 'passive_voice',
+              category: 'grammar',
+            },
+          ],
+          scores: {
+            quality: {
+              score: 80,
+              grammar: { score: 90, issues: 1 },
+              alignment: { score: 85, issues: 0 },
+              terminology: { score: 85, issues: 0 },
+            },
+            analysis: {
+              clarity: {
+                score: 75,
+                word_count: 75,
+                sentence_count: 5,
+                average_sentence_length: 15,
+                flesch_reading_ease: 80,
+                vocabulary_complexity: 85,
+                sentence_complexity: 97.4,
+              },
+              tone: {
+                score: 70,
+                informality: 30,
+                liveliness: 60,
+                informality_alignment: 25.0,
+                liveliness_alignment: 40.0,
+              },
+            },
+          },
         },
       });
     }),
@@ -243,60 +240,57 @@ const styleHandlers = {
     }),
     poll: http.get('*/v1/style/suggestions/:workflowId', () => {
       return HttpResponse.json({
-        status: Status.Completed,
-        workflow_id: 'test-workflow-id',
-        style_guide_id: 'test-style-guide-id',
-        scores: {
-          quality: {
-            score: 80,
-            grammar: {
-              score: 90,
-              issues: 1,
-            },
-            style_guide: {
-              score: 85,
-              issues: 0,
-            },
-            terminology: {
-              score: 85,
-              issues: 0,
-            },
-          },
-          analysis: {
-            clarity: {
-              score: 75,
-              word_count: 75,
-              sentence_count: 5,
-              average_sentence_length: 15,
-              flesch_reading_ease: 80,
-              vocabulary_complexity: 85,
-              sentence_complexity: 97.4,
-            },
-            tone: {
-              score: 70,
-              informality: 30,
-              liveliness: 60,
-              informality_alignment: 25.0,
-              liveliness_alignment: 40.0,
-            },
-          },
+        workflow: {
+          id: 'test-workflow-id',
+          type: 'suggestions',
+          api_version: '1.0.0',
+          generated_at: '2025-01-15T14:45:12Z',
+          status: Status.Completed,
         },
-        issues: [
-          {
-            original: 'This is a test sentence.',
-            char_index: 0,
-            subcategory: 'passive_voice',
-            category: 'grammar',
-            suggestion: 'This sentence should be rewritten.',
-          },
-        ],
-        check_options: {
+        config: {
+          dialect: 'american_english',
           style_guide: {
             style_guide_type: 'ap',
             style_guide_id: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
           },
-          dialect: 'american_english',
           tone: 'academic',
+        },
+        original: {
+          issues: [
+            {
+              original: 'This is a test sentence.',
+              position: { start_index: 0 },
+              subcategory: 'passive_voice',
+              category: 'grammar',
+              suggestion: 'This sentence should be rewritten.',
+            },
+          ],
+          scores: {
+            quality: {
+              score: 80,
+              grammar: { score: 90, issues: 1 },
+              alignment: { score: 85, issues: 0 },
+              terminology: { score: 85, issues: 0 },
+            },
+            analysis: {
+              clarity: {
+                score: 75,
+                word_count: 75,
+                sentence_count: 5,
+                average_sentence_length: 15,
+                flesch_reading_ease: 80,
+                vocabulary_complexity: 85,
+                sentence_complexity: 97.4,
+              },
+              tone: {
+                score: 70,
+                informality: 30,
+                liveliness: 60,
+                informality_alignment: 25.0,
+                liveliness_alignment: 40.0,
+              },
+            },
+          },
         },
       });
     }),
@@ -314,93 +308,84 @@ const styleHandlers = {
     }),
     poll: http.get('*/v1/style/rewrites/:workflowId', () => {
       return HttpResponse.json({
-        status: Status.Completed,
-        style_guide_id: 'test-style-guide-id',
-        scores: {
-          quality: {
-            score: 80,
-            grammar: {
-              score: 90,
-              issues: 1,
-            },
-            style_guide: {
-              score: 85,
-              issues: 0,
-            },
-            terminology: {
-              score: 85,
-              issues: 0,
-            },
-          },
-          analysis: {
-            clarity: {
-              score: 80,
-              word_count: 75,
-              sentence_count: 5,
-              average_sentence_length: 15,
-              flesch_reading_ease: 80,
-              vocabulary_complexity: 85,
-              sentence_complexity: 97.4,
-            },
-            tone: {
-              score: 70,
-              informality: 30,
-              liveliness: 60,
-              informality_alignment: 25.0,
-              liveliness_alignment: 40.0,
-            },
-          },
+        workflow: {
+          id: 'test-workflow-id',
+          type: 'rewrites',
+          api_version: '1.0.0',
+          generated_at: '2025-01-15T15:12:45Z',
+          status: Status.Completed,
         },
-        issues: [
-          {
-            original: 'This is a test sentence.',
-            char_index: 0,
-            subcategory: 'passive_voice',
-            category: 'grammar',
-            suggestion: 'This sentence should be rewritten.',
-          },
-        ],
-        check_options: {
+        config: {
+          dialect: 'american_english',
           style_guide: {
             style_guide_type: 'ap',
             style_guide_id: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
           },
-          dialect: 'american_english',
           tone: 'academic',
         },
-        rewrite: 'This is an improved test sentence.',
-        rewrite_scores: {
-          quality: {
-            score: 85,
-            grammar: {
-              score: 95,
-              issues: 0,
+        original: {
+          issues: [
+            {
+              original: 'This is a test sentence.',
+              position: { start_index: 0 },
+              subcategory: 'passive_voice',
+              category: 'grammar',
+              suggestion: 'This sentence should be rewritten.',
             },
-            style_guide: {
-              score: 90,
-              issues: 0,
+          ],
+          scores: {
+            quality: {
+              score: 80,
+              grammar: { score: 90, issues: 1 },
+              alignment: { score: 85, issues: 0 },
+              terminology: { score: 85, issues: 0 },
             },
-            terminology: {
-              score: 90,
-              issues: 0,
+            analysis: {
+              clarity: {
+                score: 80,
+                word_count: 75,
+                sentence_count: 5,
+                average_sentence_length: 15,
+                flesch_reading_ease: 80,
+                vocabulary_complexity: 85,
+                sentence_complexity: 97.4,
+              },
+              tone: {
+                score: 70,
+                informality: 30,
+                liveliness: 60,
+                informality_alignment: 25.0,
+                liveliness_alignment: 40.0,
+              },
             },
           },
-          analysis: {
-            clarity: {
-              score: 80,
-              word_count: 75,
-              sentence_count: 5,
-              average_sentence_length: 15,
-              flesch_reading_ease: 80,
-              vocabulary_complexity: 85,
-              sentence_complexity: 97.4,
+        },
+        rewrite: {
+          text: 'This is an improved test sentence.',
+          scores: {
+            quality: {
+              score: 85,
+              grammar: { score: 95, issues: 0 },
+              alignment: { score: 90, issues: 0 },
+              terminology: { score: 90, issues: 0 },
             },
-            tone: {
-              score: 75,
-              informality: 25,
-              liveliness: 65,
-              informality_alignment: 25.0,
-              liveliness_alignment: 40.0,
+            analysis: {
+              clarity: {
+                score: 80,
+                word_count: 75,
+                sentence_count: 5,
+                average_sentence_length: 15,
+                flesch_reading_ease: 80,
+                vocabulary_complexity: 85,
+                sentence_complexity: 97.4,
+              },
+              tone: {
+                score: 75,
+                informality: 25,
+                liveliness: 65,
+                informality_alignment: 25.0,
+                liveliness_alignment: 40.0,
+              },
             },
           },
         },

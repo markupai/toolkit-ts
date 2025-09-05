@@ -1,6 +1,6 @@
 {
   "name": "@markupai/toolkit",
-  "version": "0.1.1",
+  "version": "0.2.0-dev.2",
   "type": "module",
   "main": "./dist/toolkit.umd.cjs",
   "module": "./dist/toolkit.js",
@@ -13,7 +13,8 @@
   },
   "homepage": "https://github.com/markupai/toolkit-ts",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "tag": "dev"
   },
   "files": [
     "dist",

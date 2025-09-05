@@ -123,7 +123,8 @@ export async function getStyleCheck(
   config: Config,
 ): Promise<StyleAnalysisSuccessResp | StyleAnalysisPollResp> {
   const client = initEndpoint(config);
-  return (await client.styleChecks.getStyleCheck(workflowId)) as StyleAnalysisSuccessResp;
+  // TODO: Remove the unknown as cast once the SDK API is updated
+  return (await client.styleChecks.getStyleCheck(workflowId)) as unknown as StyleAnalysisSuccessResp;
 }
 
 // Get style suggestion results by workflow ID
@@ -138,7 +139,8 @@ export async function getStyleSuggestion(
   config: Config,
 ): Promise<StyleAnalysisSuggestionResp | StyleAnalysisPollResp> {
   const client = initEndpoint(config);
-  return (await client.styleSuggestions.getStyleSuggestion(workflowId)) as StyleAnalysisSuggestionResp;
+  // TODO: Remove the unknown as cast once the SDK API is updated
+  return (await client.styleSuggestions.getStyleSuggestion(workflowId)) as unknown as StyleAnalysisSuggestionResp;
 }
 
 /**
@@ -152,7 +154,8 @@ export async function getStyleRewrite(
   config: Config,
 ): Promise<StyleAnalysisRewriteResp | StyleAnalysisPollResp> {
   const client = initEndpoint(config);
-  return (await client.styleRewrites.getStyleRewrite(workflowId)) as StyleAnalysisRewriteResp;
+  // TODO: Remove the unknown as cast once the SDK API is updated
+  return (await client.styleRewrites.getStyleRewrite(workflowId)) as unknown as StyleAnalysisRewriteResp;
 }
 
 // Batch processing functions
