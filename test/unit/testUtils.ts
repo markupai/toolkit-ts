@@ -2,11 +2,11 @@ import { fail } from 'assert';
 import { ErrorType } from '../../src/utils/errors';
 import { expect, vi } from 'vitest';
 
-export const testTimeout = async (pollingFunction: () => Promise<unknown>, timeout: number) => {
+export const testTimeout = async (pollingFunction: () => Promise<unknown>, timeoutMillis: number) => {
   let success = false;
   try {
     const promise = pollingFunction();
-    vi.advanceTimersByTime(timeout + 1);
+    vi.advanceTimersByTime(timeoutMillis + 1);
     await promise;
     success = true;
   } catch (error) {

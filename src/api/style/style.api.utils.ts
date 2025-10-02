@@ -189,13 +189,13 @@ export async function createContentObject(request: StyleAnalysisReq): Promise<Fi
   }
 }
 
-export const defaultWorkflowTimeout = 300000;
+export const defaultWorkflowTimeoutMillis = 300000;
 export interface WorkflowConfig extends Config {
   /**
    * The timeout for the workflow in milliseconds.
    * @default 5 minutes, 300000 milliseconds
    */
-  timeout?: number;
+  timeoutMillis?: number;
 }
 
 // Helper function to handle style analysis submission and polling, has a default timeout of 5 minutes
@@ -372,7 +372,10 @@ class BatchQueue<T extends StyleAnalysisResponseType> {
 
     for (let attempt = 0; attempt <= this.options.retryAttempts; attempt++) {
       try {
-        return await this.styleFunction(request, { ...this.config, timeout: this.options.timeout } as WorkflowConfig);
+        return await this.styleFunction(request, {
+          ...this.config,
+          timeoutMillis: this.options.timeoutMillis,
+        } as WorkflowConfig);
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
 
@@ -480,7 +483,7 @@ export function styleBatchCheck<T extends StyleAnalysisResponseType>(
     maxConcurrent: 100,
     retryAttempts: 2,
     retryDelay: 1000,
-    timeout: defaultWorkflowTimeout,
+    timeoutMillis: defaultWorkflowTimeoutMillis,
   };
 
   const finalOptions: Required<BatchOptions> = {
@@ -545,13 +548,13 @@ export async function pollWorkflowForResult<T>(
 ): Promise<T> {
   let attempts = 0;
   const pollInterval = 2000;
-  const timeout = config.timeout ?? defaultWorkflowTimeout;
-  const maxAttempts = Math.floor(timeout / pollInterval);
+  const timeoutMillis = config.timeoutMillis ?? defaultWorkflowTimeoutMillis;
+  const maxAttempts = Math.floor(timeoutMillis / pollInterval);
 
   const poll = async (): Promise<T> => {
     // Check if we've exceeded the timeout
     const elapsedTime = Date.now() - startTime;
-    if (elapsedTime > timeout) {
+    if (elapsedTime > timeoutMillis) {
       throw new ApiError(`Workflow timed out after ${elapsedTime}ms`, ErrorType.TIMEOUT_ERROR);
     }
 

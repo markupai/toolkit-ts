@@ -40,7 +40,7 @@ describe('Style API Unit Tests', () => {
   };
   const mockWorkflowConfig: WorkflowConfig = {
     ...mockConfig,
-    timeout: 0,
+    timeoutMillis: 0,
   };
   const mockWorkflowId = 'test-workflow-id';
   const mockStyleAnalysisRequest = {
@@ -232,7 +232,10 @@ describe('Style API Unit Tests', () => {
     it('should abort style check with polling after timeout', async () => {
       server.use(apiHandlers.style.checks.success, apiHandlers.style.checks.poll);
 
-      await testTimeout(() => styleCheck(mockStyleAnalysisRequest, mockWorkflowConfig), mockWorkflowConfig.timeout!);
+      await testTimeout(
+        () => styleCheck(mockStyleAnalysisRequest, mockWorkflowConfig),
+        mockWorkflowConfig.timeoutMillis!,
+      );
     });
 
     it('should handle analysis.tone as null for style check results', async () => {
@@ -258,7 +261,7 @@ describe('Style API Unit Tests', () => {
 
       await testTimeout(
         () => styleSuggestions(mockStyleAnalysisRequest, mockWorkflowConfig),
-        mockWorkflowConfig.timeout!,
+        mockWorkflowConfig.timeoutMillis!,
       );
     });
 
@@ -289,7 +292,10 @@ describe('Style API Unit Tests', () => {
     it('should abort style rewrite with polling after timeout', async () => {
       server.use(apiHandlers.style.rewrites.success, apiHandlers.style.rewrites.poll);
 
-      await testTimeout(() => styleRewrite(mockStyleAnalysisRequest, mockWorkflowConfig), mockWorkflowConfig.timeout!);
+      await testTimeout(
+        () => styleRewrite(mockStyleAnalysisRequest, mockWorkflowConfig),
+        mockWorkflowConfig.timeoutMillis!,
+      );
     });
 
     it('should handle analysis.tone as object for style rewrites', async () => {

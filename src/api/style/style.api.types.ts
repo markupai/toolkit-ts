@@ -182,7 +182,7 @@ export interface BatchOptions {
    * The timeout for the analysis of one content item in milliseconds.
    * @default 5 minutes, 300000 milliseconds
    */
-  timeout?: number;
+  timeoutMillis?: number;
 }
 
 export interface BatchResult<T = StyleAnalysisResponseType> {

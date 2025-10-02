@@ -91,7 +91,7 @@ const batchCheck = styleBatchCheckRequests(requests, config, {
   maxConcurrent: 5,
   retryAttempts: 3,
   retryDelay: 1000,
-  timeout: 30000,
+  timeoutMillis: 30000,
 });
 
 // Monitor progress (live snapshot)
