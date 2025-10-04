@@ -9,6 +9,8 @@ import {
   isCompletedResponse,
   styleBatchCheck,
 } from '../../../src/api/style/style.api.utils';
+import { createBlob, createFile } from '../../../src/api/style/style.api.utils';
+import { createContentObject } from '../../../src/api/style/style.api.utils';
 import { Config, Environment, PlatformType, Status } from '../../../src/utils/api.types';
 
 // Mock Node.js modules
@@ -199,6 +201,119 @@ describe('Style API Utils', () => {
         file: expect.any(File),
         name: 'test-style-guide',
       });
+    });
+  });
+
+  describe('HTML content handling', () => {
+    it('should create Blob with text/html for HTML string content when documentName indicates html', async () => {
+      const request: StyleAnalysisReq = {
+        content: '<!doctype html><html><head><title>T</title></head><body><p>Hello</p></body></html>',
+        style_guide: 'ap',
+        dialect: 'american_english',
+        documentName: 'page.html',
+      };
+
+      const blob = await createBlob(request);
+      expect(blob.type).toBe('text/html');
+    });
+
+    it('should create Blob with text/html for HTML string content by heuristic when no filename provided', async () => {
+      const request: StyleAnalysisReq = {
+        content: '<html><body><div>Content</div></body></html>',
+        style_guide: 'ap',
+        dialect: 'american_english',
+      };
+
+      const blob = await createBlob(request);
+      expect(blob.type).toBe('text/html');
+    });
+
+    it('should create File with text/html for HTML string content and .htm extension', async () => {
+      const request: StyleAnalysisReq = {
+        content: '<html><body><span>Hi</span></body></html>',
+        style_guide: 'ap',
+        dialect: 'american_english',
+        documentName: 'index.htm',
+      };
+
+      const file = await createFile(request);
+      expect(file.type).toBe('text/html');
+      expect(file.name).toBe('index.htm');
+    });
+
+    it('should default to text/plain for non-HTML strings without filename', async () => {
+      const request: StyleAnalysisReq = {
+        content: 'Just a plain text file with no HTML tags.',
+        style_guide: 'ap',
+        dialect: 'american_english',
+      };
+
+      const blob = await createBlob(request);
+      expect(blob.type).toBe('text/plain');
+    });
+
+    it('should detect application/xhtml+xml for xhtml filenames', async () => {
+      const request: StyleAnalysisReq = {
+        content: '<html xmlns="http://www.w3.org/1999/xhtml"><head><title>X</title></head><body/></html>',
+        style_guide: 'ap',
+        dialect: 'american_english',
+        documentName: 'doc.xhtml',
+      };
+
+      const blob = await createBlob(request);
+      expect(blob.type).toBe('application/xhtml+xml');
+    });
+
+    it('should auto-assign document.html when string looks like HTML and no filename provided', async () => {
+      const request: StyleAnalysisReq = {
+        content: '<html><body>Auto name</body></html>',
+        style_guide: 'ap',
+        dialect: 'american_english',
+      };
+
+      const file = await createFile(request);
+      expect(file.name).toBe('document.html');
+      expect(file.type).toBe('text/html');
+    });
+
+    it('should prefer BufferDescriptor.filename for MIME inference', async () => {
+      const buffer = Buffer.from('<html><body>buf</body></html>', 'utf8');
+      const request: StyleAnalysisReq = {
+        content: { buffer, filename: 'page.html' },
+        style_guide: 'ap',
+        dialect: 'american_english',
+      };
+
+      const blob = await createBlob(request);
+      expect(blob.type).toBe('text/html');
+    });
+
+    it('should use request.filename to set name and MIME for HTML string', async () => {
+      const request: StyleAnalysisReq = {
+        content: '<html><body>Title</body></html>',
+        style_guide: 'ap',
+        dialect: 'american_english',
+        filename: 'sample.html',
+      };
+
+      const file = await createFile(request);
+      expect(file.name).toBe('sample.html');
+      expect(file.type).toBe('text/html');
+    });
+
+    it('createContentObject should prefer File so filename is preserved', async () => {
+      const request: StyleAnalysisReq = {
+        content: '<html><body>Preserve</body></html>',
+        style_guide: 'ap',
+        dialect: 'american_english',
+        documentName: 'preserve.html',
+      };
+
+      const contentObject = await createContentObject(request);
+      expect(contentObject).toBeInstanceOf(File);
+      const file = contentObject as File;
+      expect(file.name).toBe('preserve.html');
+      expect(file.type).toBe('text/html');
     });
   });
 

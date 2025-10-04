@@ -12,7 +12,7 @@ npm install @markupai/toolkit
 
 ### Style Analysis
 
-The toolkit supports string content, File objects, and Buffer objects for style analysis with automatic MIME type detection for binary files:
+The toolkit supports string content, File objects, and Buffer objects for style analysis with automatic MIME type detection for binary files. It also supports HTML content strings and files:
 
 ```typescript
 import {
@@ -35,6 +35,16 @@ const stringRequest = {
   style_guide: 'ap',
   dialect: 'american_english',
   tone: 'formal',
+};
+
+// Using HTML string content (auto-detected as text/html)
+const htmlStringRequest = {
+  content: '<!doctype html><html><body><p>Hello</p></body></html>',
+  style_guide: 'ap',
+  dialect: 'american_english',
+  tone: 'formal',
+  // Optional: provide a filename to enforce MIME type
+  documentName: 'page.html',
 };
 
 // Using File object (browser environments)
@@ -65,6 +75,7 @@ const bufferRequest = {
 const result = await styleCheck(stringRequest, config);
 const fileResult = await styleCheck(fileRequest, config);
 const pdfResult = await styleCheck(bufferRequest, config); // Works with PDFs!
+const htmlResult = await styleCheck(htmlStringRequest, config); // Works with HTML!
 
 // Get style suggestions
 const suggestionResult = await styleSuggestions(stringRequest, config);

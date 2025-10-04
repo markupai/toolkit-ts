@@ -34,6 +34,8 @@ export interface FileDescriptor {
 export interface BufferDescriptor {
   buffer: Buffer;
   mimeType?: string;
+  /** Optional original filename hint for MIME and extension preservation */
+  filename?: string;
 }
 
 /**
@@ -152,6 +154,8 @@ export interface StyleAnalysisReq {
   tone?: string;
   documentName?: string; // Optional document name for the file upload
   webhook_url?: string; // Optional webhook URL for async processing
+  /** Optional alias for documentName; used by some callers */
+  filename?: string;
 }
 
 export interface StyleGuide {

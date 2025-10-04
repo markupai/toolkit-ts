@@ -114,8 +114,12 @@ export function getMimeTypeFromFilename(filename: string): string {
       return 'text/plain';
     case 'md':
       return 'text/markdown';
+    case 'htm':
+      return 'text/html';
     case 'html':
       return 'text/html';
+    case 'xhtml':
+      return 'application/xhtml+xml';
     case 'docx':
       return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     case 'doc':
@@ -135,9 +139,12 @@ export function isBuffer(obj: unknown): obj is Buffer {
 
 export async function createBlob(request: StyleAnalysisReq): Promise<Blob> {
   const BlobCtor = await getBlobCtor();
-  const filename = request.documentName || 'unknown.txt';
+  const filename = resolveFilename(request);
   if (typeof request.content === 'string') {
-    return new BlobCtor([request.content], { type: 'text/plain' });
+    // Prefer MIME type based on filename if provided; fallback to simple HTML heuristic, then text/plain
+    const nameDerived = getMimeTypeFromFilename(filename);
+    const type = nameDerived !== 'application/octet-stream' ? nameDerived : isLikelyHtmlString(request.content) ? 'text/html' : 'text/plain';
+    return new BlobCtor([request.content], { type });
   } else if (typeof File !== 'undefined' && 'file' in request.content && request.content.file instanceof File) {
     const fileDescriptor = request.content;
     // Convert File to Node.js Blob by reading it as ArrayBuffer first
@@ -145,7 +152,7 @@ export async function createBlob(request: StyleAnalysisReq): Promise<Blob> {
     return new BlobCtor([arrayBuffer], { type: fileDescriptor.mimeType || 'application/octet-stream' });
   } else if ('buffer' in request.content && isBuffer(request.content.buffer)) {
     const bufferDescriptor = request.content;
-    const mimeType = bufferDescriptor.mimeType || getMimeTypeFromFilename(filename);
+    const mimeType = bufferDescriptor.mimeType || getMimeTypeFromFilename(bufferDescriptor.filename || filename);
     // Convert Buffer to ArrayBuffer to satisfy TypeScript 5.9.2 strict typing
     const arrayBuffer = bufferDescriptor.buffer.buffer.slice(
       bufferDescriptor.buffer.byteOffset,
@@ -158,16 +165,19 @@ export async function createBlob(request: StyleAnalysisReq): Promise<Blob> {
 }
 
 export async function createFile(request: StyleAnalysisReq): Promise<File> {
-  const filename = request.documentName || 'unknown.txt';
+  const filename = resolveFilename(request);
 
   if (typeof request.content === 'string') {
-    return new File([request.content], filename, { type: 'text/plain' });
+    // Prefer MIME type based on filename if provided; fallback to simple HTML heuristic, then text/plain
+    const nameDerived = getMimeTypeFromFilename(filename);
+    const type = nameDerived !== 'application/octet-stream' ? nameDerived : isLikelyHtmlString(request.content) ? 'text/html' : 'text/plain';
+    return new File([request.content], filename, { type });
   } else if (typeof File !== 'undefined' && 'file' in request.content && request.content.file instanceof File) {
     const fileDescriptor = request.content;
     return fileDescriptor.file;
   } else if ('buffer' in request.content && isBuffer(request.content.buffer)) {
     const bufferDescriptor = request.content;
-    const mimeType = bufferDescriptor.mimeType || getMimeTypeFromFilename(filename);
+    const mimeType = bufferDescriptor.mimeType || getMimeTypeFromFilename(bufferDescriptor.filename || filename);
     // Convert Buffer to ArrayBuffer to satisfy TypeScript 5.9.2 strict typing
     const arrayBuffer = bufferDescriptor.buffer.buffer.slice(
       bufferDescriptor.buffer.byteOffset,
@@ -180,13 +190,34 @@ export async function createFile(request: StyleAnalysisReq): Promise<File> {
 }
 
 export async function createContentObject(request: StyleAnalysisReq): Promise<File | Blob> {
-  // Check if we're in a Node.js environment
-  if (isNodeEnvironment()) {
-    return createBlob(request);
-  } else {
-    // Browser environment
+  // Prefer File when available so filename (extension) is preserved in uploads
+  if (typeof File !== 'undefined') {
     return createFile(request);
   }
+  // Fallback to Blob when File is not available
+  return createBlob(request);
+}
+
+// Simple and fast heuristic to detect likely HTML content in a string
+function isLikelyHtmlString(content: string): boolean {
+  const sample = content.trimStart().slice(0, 256).toLowerCase();
+  if (sample.startsWith('<!doctype html') || sample.startsWith('<html')) return true;
+  // Common HTML tags early in documents
+  return /<(head|body|title|div|span|p|h1|h2|h3|h4|h5|h6)\b/.test(sample);
+}
+
+// Determine best filename: prefer explicit documentName/filename, then derive from content heuristics
+function resolveFilename(request: StyleAnalysisReq): string {
+  const explicit = request.documentName || request.filename;
+  if (explicit) return explicit;
+  if (typeof request.content === 'string') {
+    // If looks like HTML, default to .html to satisfy backend validation
+    if (isLikelyHtmlString(request.content)) return 'document.html';
+  } else if ('buffer' in request.content) {
+    const bd = request.content;
+    if (bd.filename) return bd.filename;
+  }
+  return 'unknown.txt';
 }
 
 export const defaultWorkflowTimeout = 300000;
